@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
+}
+
+datasource db {
+  provider = "cockroachdb"
+  url      = env("DATABASE_URL")
+}
+
+enum Provider {
+  Email
+  Google
+}
+
+enum Role {
+  User
+  Anunciante
+  Moderator
+  Admin
+}
+
+model User {
+  id            String   @id @default(cuid())
+  name          String
+  email         String
+  emailVerified Boolean  @default(false)
+  password      String?
+  avatar        String?
+  provider      Provider @default(Email)
+  role          Role     @default(User)
+  block         Boolean  @default(false)
+  city          String?
+  anuncio       Anuncio?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([email])
+  @@map("users")
+}
+
+model Anuncio {
+  id            String   @id @default(cuid())
+  title         String
+  description   String
+  listingPoints BigInt?
+  image         String?
+  openingHours  Json
+  active        Boolean  @default(true)
+  certificates  Json?
+  slide         String[]
+  price         Float?
+  address       String
+  authorId      String
+  networks      Json?
+  contacts      Json
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@map("anuncios")
+  @@unique([authorId])
+}
+
+
