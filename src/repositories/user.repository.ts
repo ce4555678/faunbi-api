@@ -6,6 +6,7 @@ import {
   type UserInterface,
   type UserUpdate,
 } from "../interfaces/user.interface";
+import * as argon2 from "argon2";
 
 class UserRepositoryPrisma implements UserInterface {
   async update(data: UserUpdate): Promise<null> {
@@ -70,6 +71,12 @@ class UserRepositoryPrisma implements UserInterface {
     });
 
     return result || null;
+  }
+
+  async hash(password: string): Promise<string> {
+    const hashPwd = await argon2.hash(password);
+
+    return hashPwd;
   }
 }
 

@@ -23,6 +23,7 @@ export interface UserCreate {
 }
 
 export interface UserInterface {
+  hash(password: string): Promise<string>;
   create(data: UserCreate): Promise<{ id: string }>;
   update(data: UserUpdate): Promise<null>;
   delete(id: string): Promise<null>;

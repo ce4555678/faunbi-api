@@ -1,5 +1,20 @@
-import { GoogleRepository } from "../repositories/Google.repository";
+import { type $Enums } from "@prisma/client";
+import { GoogleRepository } from "../repositories/google.repository";
 import { UserRepositoryPrisma } from "../repositories/user.repository";
+
+type SessionUser = {
+  user: {
+    id: string;
+    name: string;
+    avatar: string | undefined;
+    role: $Enums.Role;
+  };
+  anuncio?: {
+    id: string;
+    title: string;
+    image?: string;
+  };
+};
 
 export class GoogleUseCase {
   private userRepository = new UserRepositoryPrisma();
@@ -26,8 +41,7 @@ export class GoogleUseCase {
       throw new Error("invalid request");
     }
 
-    const { access_token, id_token } =
-      await this.googleRepository.callback(code);
+    const { access_token } = await this.googleRepository.callback(code);
     const { email, email_verified, name, picture } =
       await this.googleRepository.getUser(access_token);
     const userExists = await this.userRepository.findByEmailAnuncio(email);
@@ -48,35 +62,36 @@ export class GoogleUseCase {
           avatar: picture,
           role: "User",
         },
-      };
-    }
-
-    if (userExists.anuncio) {
-      return {
-        user: {
-          id: userExists.id,
-          name: userExists.name,
-          avatar: userExists.avatar || undefined,
-          role: userExists.role,
-        },
-        anuncio: {
-          id: userExists.anuncio.id,
-          title: userExists.anuncio.title,
-          image: userExists.anuncio.image || undefined,
-        },
+        anuncio: undefined,
       };
     }
 
     if (userExists.provider !== "Google") {
       throw new Error("already exists with a different provider");
     }
-    return {
+
+    let session: SessionUser = {
       user: {
         id: userExists.id,
         name: userExists.name,
-        avatar: userExists.avatar,
+        avatar: userExists.avatar || undefined,
         role: userExists.role,
       },
+      anuncio: undefined,
     };
+
+    if (userExists.anuncio) {
+      session = {
+        ...session,
+        anuncio: {
+          id: userExists.anuncio.id,
+          title: userExists.anuncio.title,
+          image: userExists.anuncio.image || undefined,
+        },
+      };
+      return session;
+    }
+
+    return session;
   }
 }

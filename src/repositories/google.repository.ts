@@ -1,6 +1,6 @@
 import { generateState } from "oslo/oauth2";
 import { OAuth2Client } from "oslo/oauth2";
-import { GoogleInterface } from "../interfaces/Google.interface";
+import { GoogleInterface } from "../interfaces/google.interface";
 
 export class GoogleRepository implements GoogleInterface {
   async genState(): Promise<string> {

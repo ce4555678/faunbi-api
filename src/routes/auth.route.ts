@@ -2,13 +2,16 @@ import { type FastifyInstance } from "fastify/types/instance";
 import { UserUseCase } from "../useCase/user.useCase";
 import { z } from "zod";
 import { validateUserCreate } from "../validators/user.validator";
-import { GoogleUseCase } from "../useCase/Google.useCase";
-import { $Enums } from "@prisma/client";
+import { type $Enums } from "@prisma/client";
+import { GoogleUseCase } from "../useCase/google.useCase";
+import { AuthUseCase } from "../useCase/auth.useCase";
+import { validateLogin } from "../validators/auth.validator";
 
 const authRoute = async (app: FastifyInstance) => {
   const userUseCase = new UserUseCase();
   const googleUseCase = new GoogleUseCase();
-
+  const authUseCase = new AuthUseCase();
+  // Signup
   app.route({
     url: "/signup",
     method: "POST",
@@ -57,7 +60,7 @@ const authRoute = async (app: FastifyInstance) => {
       }
     },
   });
-
+  // Login Google
   app.route({
     url: "/login/google",
     method: "POST",
@@ -86,6 +89,7 @@ const authRoute = async (app: FastifyInstance) => {
     },
   });
 
+  // Callback Google
   app.get("/callback/google", async (req, reply) => {
     try {
       const url = new URL(
@@ -98,22 +102,22 @@ const authRoute = async (app: FastifyInstance) => {
       const code = url.searchParams.get("code") || "";
       const storedState = req.cookies.state_google || "";
 
-      const { user, anuncio } = await googleUseCase.callback(
-        state,
-        storedState,
-        code,
-      );
+      const session = await googleUseCase.callback(state, storedState, code);
 
-      if (anuncio) {
-        req.session.anuncio = anuncio;
+      if (session.anuncio) {
+        req.session.anuncio = {
+          id: session.anuncio.id,
+          title: session.anuncio.title,
+          image: session.anuncio.image,
+        };
       }
 
-      if (user) {
+      if (session.user) {
         req.session.user = {
-          id: user.id,
-          name: user.name,
-          avatar: user.avatar || undefined,
-          role: user.role as $Enums.Role,
+          id: session.user.id,
+          name: session.user.name,
+          avatar: session.user.avatar || undefined,
+          role: session.user.role as $Enums.Role,
         };
       }
 
@@ -126,6 +130,45 @@ const authRoute = async (app: FastifyInstance) => {
         },
       });
     }
+  });
+
+  // Login
+  app.route({
+    url: "/login",
+    method: "POST",
+    onRequest: app.csrfProtection,
+    handler: async (req, reply) => {
+      try {
+        const { email, password } = await validateLogin(req.body);
+        const session = await authUseCase.login({ email, password });
+
+        if (session.anuncio) {
+          req.session.anuncio = {
+            id: session.anuncio.id,
+            title: session.anuncio.title,
+            image: session.anuncio.image,
+          };
+        }
+
+        if (session.user) {
+          req.session.user = {
+            id: session.user.id,
+            name: session.user.name,
+            avatar: session.user.avatar || undefined,
+            role: session.user.role as $Enums.Role,
+          };
+        }
+
+        return reply.send("");
+      } catch (error) {
+        reply.status(500);
+        return reply.send({
+          error: {
+            message: "Server error",
+          },
+        });
+      }
+    },
   });
 };
 export default authRoute;

@@ -26,30 +26,45 @@ enum Role {
   Admin
 }
 
+enum ItemType {
+  Product
+  Service
+}
+
 model User {
-  id            String   @id @default(cuid())
+  id            String       @id @default(cuid())
   name          String
   email         String
-  emailVerified Boolean  @default(false)
+  emailVerified Boolean      @default(false)
   password      String?
   avatar        String?
-  provider      Provider @default(Email)
-  role          Role     @default(User)
-  block         Boolean  @default(false)
+  provider      Provider     @default(Email)
+  role          Role         @default(User)
+  block         Boolean      @default(false)
   city          String?
   anuncio       Anuncio?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  reviews       Review[]
+  reviewLikes   ReviewLike[]
+  postLikes     PostLike[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
   @@unique([email])
   @@map("users")
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  title    String
+  active   Boolean   @default(true)
+  anuncios Anuncio[]
 }
 
 model Anuncio {
   id            String   @id @default(cuid())
   title         String
   description   String
-  listingPoints BigInt?
+  listingPoints Int?
   image         String?
   openingHours  Json
   active        Boolean  @default(true)
@@ -58,15 +73,92 @@ model Anuncio {
   price         Float?
   address       String
   authorId      String
+  categoryId    String
   networks      Json?
+  Items         Item[]
+  posts         Post[]
   contacts      Json
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  user User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
 
-  @@map("anuncios")
   @@unique([authorId])
+  @@map("anuncios")
 }
 
+model Item {
+  id          String    @id @default(cuid())
+  title       String
+  description String
+  image       String?
+  slide       String[]
+  promotion   DateTime?
+  price       Float?
+  type        ItemType  @default(Product)
+  anuncioId   String
+  reviews     Review[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
+  anuncio Anuncio @relation(fields: [anuncioId], references: [id], onDelete: Cascade)
+
+  @@map("items")
+}
+
+model Review {
+  id        String       @id @default(cuid())
+  content   String
+  stars     Int          @default(1)
+  itemId    String
+  authorId  String
+  likes     ReviewLike[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  user User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@map("reviews")
+}
+
+model ReviewLike {
+  id        String   @id @default(cuid())
+  authorId  String
+  reviewId  String
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@unique([authorId, reviewId])
+  @@map("reviewLikes")
+}
+
+model Post {
+  id        String     @id @default(cuid())
+  content   String
+  files     Json?
+  anuncioId String
+  likes     PostLike[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  anuncio Anuncio @relation(fields: [anuncioId], references: [id], onDelete: Cascade)
+
+  @@map("posts")
+}
+
+model PostLike {
+  id        String   @id @default(cuid())
+  authorId  String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([authorId, postId])
+  @@map("postLikes")
+}

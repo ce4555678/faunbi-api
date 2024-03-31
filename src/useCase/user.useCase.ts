@@ -22,7 +22,7 @@ export class UserUseCase {
 
     // Criptografar a senha, se fornecida
     if (data.password) {
-      data.password = await argon2.hash(data.password);
+      data.password = await this.userRepository.hash(data.password);
     }
 
     // Criar o usuário
