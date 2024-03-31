@@ -11,6 +11,7 @@ const authRoute = async (app: FastifyInstance) => {
   const userUseCase = new UserUseCase();
   const googleUseCase = new GoogleUseCase();
   const authUseCase = new AuthUseCase();
+  
   // Signup
   app.route({
     url: "/signup",
@@ -90,46 +91,71 @@ const authRoute = async (app: FastifyInstance) => {
   });
 
   // Callback Google
-  app.get("/callback/google", async (req, reply) => {
-    try {
-      const url = new URL(
-        req.url,
-        process.env.NODE_ENV == "production"
-          ? "https://api.faunbi.com"
-          : "http://localhost:8787",
-      );
-      const state = url.searchParams.get("state") || "";
-      const code = url.searchParams.get("code") || "";
-      const storedState = req.cookies.state_google || "";
+  app.route({
+    url: "/callback/google",
+    method: "GET",
+    handler: async (req, reply) => {
+      try {
+        const url = new URL(
+          req.url,
+          process.env.NODE_ENV == "production"
+            ? "https://api.faunbi.com"
+            : "http://localhost:8787",
+        );
+        const state = url.searchParams.get("state") || "";
+        const code = url.searchParams.get("code") || "";
+        const storedState = req.cookies.state_google || "";
 
-      const session = await googleUseCase.callback(state, storedState, code);
+        const session = await googleUseCase.callback(state, storedState, code);
 
-      if (session.anuncio) {
-        req.session.anuncio = {
-          id: session.anuncio.id,
-          title: session.anuncio.title,
-          image: session.anuncio.image,
-        };
+        if (session.anuncio) {
+          req.session.anuncio = {
+            id: session.anuncio.id,
+            title: session.anuncio.title,
+            image: session.anuncio.image,
+          };
+        }
+
+        if (session.user) {
+          req.session.user = {
+            id: session.user.id,
+            name: session.user.name,
+            avatar: session.user.avatar || undefined,
+            role: session.user.role as $Enums.Role,
+          };
+        }
+
+        reply.send("");
+      } catch (error: any) {
+        switch (error.message) {
+          case "invalid request":
+            reply.status(401);
+            reply.send({
+              error: {
+                message: "invalid request",
+              },
+            });
+            break;
+
+          case "already exists with a different provider":
+            reply.status(401);
+            reply.send({
+              error: {
+                message: "already exists with a different provider",
+              },
+            });
+            break;
+          default:
+            reply.status(500);
+            reply.send({
+              error: {
+                message: "Server error",
+              },
+            });
+            break;
+        }
       }
-
-      if (session.user) {
-        req.session.user = {
-          id: session.user.id,
-          name: session.user.name,
-          avatar: session.user.avatar || undefined,
-          role: session.user.role as $Enums.Role,
-        };
-      }
-
-      reply.send("");
-    } catch (error) {
-      reply.status(500);
-      return reply.send({
-        error: {
-          message: "Server error",
-        },
-      });
-    }
+    },
   });
 
   // Login
@@ -160,15 +186,76 @@ const authRoute = async (app: FastifyInstance) => {
         }
 
         return reply.send("");
-      } catch (error) {
-        reply.status(500);
-        return reply.send({
-          error: {
-            message: "Server error",
-          },
-        });
+      } catch (error: any) {
+        if (error instanceof z.ZodError) {
+          reply.status(400);
+          return reply.send({
+            error: {
+              message: "Bad request",
+            },
+          });
+        }
+
+        switch (error.message) {
+          case "User does not exist":
+            reply.status(401);
+            reply.send({
+              error: {
+                message: "User does not exist",
+              },
+            });
+            break;
+
+          case "already exists with a different provider":
+            reply.status(401);
+            reply.send({
+              error: {
+                message: "already exists with a different provider",
+              },
+            });
+            break;
+
+          case "invalid credentials":
+            reply.status(401);
+            reply.send({
+              error: {
+                message: "invalid credentials",
+              },
+            });
+            break;
+          default:
+            reply.status(500);
+            reply.send({
+              error: {
+                message: "Server error",
+              },
+            });
+            break;
+        }
       }
     },
   });
+
+  // Logout
+  app.route({
+    url: "/logout",
+    method: "POST",
+    onRequest: app.csrfProtection,
+    handler: async (req, reply) => {
+     try {
+      await req.session.destroy()
+
+      reply.send("")
+     } catch (error) {
+      reply.status(500)
+      return reply.send({
+        error: {
+          message: "Server error"
+        }
+      })
+     }
+    }
+  })
+  
 };
 export default authRoute;

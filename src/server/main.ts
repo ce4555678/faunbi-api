@@ -1,7 +1,7 @@
 import fastify from "fastify";
 
 export const app = fastify({
-  // logger: process.env.NODE_ENV !== "production",
+  logger: process.env.NODE_ENV !== "production",
 });
 
 app.get("/ping", async (request, reply) => {
