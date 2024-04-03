@@ -6,16 +6,24 @@ import { type $Enums } from "@prisma/client";
 import { GoogleUseCase } from "../useCase/google.useCase";
 import { AuthUseCase } from "../useCase/auth.useCase";
 import { validateLogin } from "../validators/auth.validator";
+import {
+  callbackGoogleSchema,
+  loginGoogleSchema,
+  loginSchema,
+  logoutSchema,
+  signupSchema,
+} from "../schemas/auth.schema";
 
 const authRoute = async (app: FastifyInstance) => {
   const userUseCase = new UserUseCase();
   const googleUseCase = new GoogleUseCase();
   const authUseCase = new AuthUseCase();
-  
+
   // Signup
   app.route({
     url: "/signup",
     method: "POST",
+    schema: signupSchema,
     onRequest: app.csrfProtection,
     handler: async (req, reply) => {
       try {
@@ -61,10 +69,12 @@ const authRoute = async (app: FastifyInstance) => {
       }
     },
   });
+
   // Login Google
   app.route({
     url: "/login/google",
     method: "POST",
+    schema: loginGoogleSchema,
     onRequest: app.csrfProtection,
     handler: async (req, reply) => {
       try {
@@ -94,6 +104,7 @@ const authRoute = async (app: FastifyInstance) => {
   app.route({
     url: "/callback/google",
     method: "GET",
+    schema: callbackGoogleSchema,
     handler: async (req, reply) => {
       try {
         const url = new URL(
@@ -162,6 +173,7 @@ const authRoute = async (app: FastifyInstance) => {
   app.route({
     url: "/login",
     method: "POST",
+    schema: loginSchema,
     onRequest: app.csrfProtection,
     handler: async (req, reply) => {
       try {
@@ -240,22 +252,23 @@ const authRoute = async (app: FastifyInstance) => {
   app.route({
     url: "/logout",
     method: "POST",
+    schema: logoutSchema,
     onRequest: app.csrfProtection,
     handler: async (req, reply) => {
-     try {
-      await req.session.destroy()
+      try {
+        await req.session.destroy();
 
-      reply.send("")
-     } catch (error) {
-      reply.status(500)
-      return reply.send({
-        error: {
-          message: "Server error"
-        }
-      })
-     }
-    }
-  })
-  
+        reply.send("");
+      } catch (error) {
+        reply.status(500);
+        return reply.send({
+          error: {
+            message: "Server error",
+          },
+        });
+      }
+    },
+  });
 };
+
 export default authRoute;

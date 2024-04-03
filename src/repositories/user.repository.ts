@@ -35,6 +35,7 @@ class UserRepositoryPrisma implements UserInterface {
         name: data.name,
         provider: data.provider,
         password: data.password,
+        terms: true,
         role: "User",
       },
     });

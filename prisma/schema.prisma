@@ -31,6 +31,12 @@ enum ItemType {
   Service
 }
 
+enum MethodPayment {
+  CreditCard
+  Pix
+  Boleto
+}
+
 model User {
   id            String       @id @default(cuid())
   name          String
@@ -46,11 +52,30 @@ model User {
   reviews       Review[]
   reviewLikes   ReviewLike[]
   postLikes     PostLike[]
+  payments      Payment[]
+  Info          InfoUser?
+  terms         Boolean      @default(false)
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
   @@unique([email])
   @@map("users")
+}
+
+model InfoUser {
+  id                String   @id @default(cuid())
+  fullName          String
+  authorId          String
+  CPF               String
+  address           String
+  moreAddress       Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@unique([authorId])
+  @@map("infoUsers")
 }
 
 model Category {
@@ -61,25 +86,27 @@ model Category {
 }
 
 model Anuncio {
-  id            String   @id @default(cuid())
-  title         String
-  description   String
-  listingPoints Int?
-  image         String?
-  openingHours  Json
-  active        Boolean  @default(true)
-  certificates  Json?
-  slide         String[]
-  price         Float?
-  address       String
-  authorId      String
-  categoryId    String
-  networks      Json?
-  Items         Item[]
-  posts         Post[]
-  contacts      Json
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id               String    @id @default(cuid())
+  title            String
+  description      String
+  listingPoints    Int?
+  pointsExpiration DateTime?
+  image            String?
+  openingHours     Json
+  verified         Boolean   @default(false)
+  active           Boolean   @default(true)
+  certificates     Json?
+  slide            String[]
+  price            Float?
+  address          String
+  authorId         String
+  categoryId       String
+  networks         Json?
+  Items            Item[]
+  posts            Post[]
+  contacts         Json
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   user     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
@@ -161,4 +188,18 @@ model PostLike {
 
   @@unique([authorId, postId])
   @@map("postLikes")
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  authorId  String
+  concluded Boolean       @default(false)
+  amount    Float
+  method    MethodPayment
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  user User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
 }

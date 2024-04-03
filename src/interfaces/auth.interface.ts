@@ -1,5 +1,3 @@
-import { UserAnuncio } from "./user.interface";
-
 export interface AuthEmail {
   email: string;
   password: string;

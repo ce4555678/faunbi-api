@@ -5,7 +5,6 @@ import { GoogleInterface } from "../interfaces/google.interface";
 export class GoogleRepository implements GoogleInterface {
   async genState(): Promise<string> {
     const state = await generateState();
-
     return state;
   }
 
