@@ -16,9 +16,9 @@ ENV NODE_ENV="production"
 # Throw-away build stage to reduce size of final image
 FROM base as build
 
-# Install packages needed to build node modules
-RUN apk update && \
-    apk add build-base gyp openssl pkgconfig python3
+# # Install packages needed to build node modules
+# RUN apk update && \
+#     apk add build-base gyp openssl pkgconfig python3
 
 # Install node modules
 COPY --link package-lock.json package.json ./
@@ -40,10 +40,10 @@ RUN npm prune --omit=dev
 # Final stage for app image
 FROM base
 
-# Install packages needed for deployment
-RUN apk update && \
-    apk add openssl && \
-    rm -rf /var/cache/apk/*
+# # Install packages needed for deployment
+# RUN apk update && \
+#     apk add openssl && \
+#     rm -rf /var/cache/apk/*
 
 # Copy built application
 COPY --from=build /app /app
