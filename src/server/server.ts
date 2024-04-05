@@ -9,6 +9,7 @@ import redis from "../database/redis";
 import authRoute from "../routes/auth.route";
 import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUi from "@fastify/swagger-ui";
+import anuncioRoute from "../routes/anuncio.route";
 
 const redisStore = new RedisStore({
   client: redis,
@@ -55,6 +56,7 @@ export const startServer = async () => {
     routePrefix: "/documentation",
   });
   await app.register(authRoute, { prefix: "/auth" });
+  await app.register(anuncioRoute, { prefix: "/anuncio" });
   await startServerFastify(app, PORT, "0.0.0.0");
 };
 

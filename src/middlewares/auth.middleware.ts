@@ -20,7 +20,7 @@ declare module "fastify" {
 
 export async function authMiddleware(req: FastifyRequest, reply: FastifyReply) {
   if (req.session.user == undefined || req.session.user == null) {
-    reply.status(401).send({
+    return reply.status(401).send({
       message: "you do not have permission",
     });
   }

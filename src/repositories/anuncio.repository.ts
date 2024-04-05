@@ -6,6 +6,7 @@ import {
   type CreateAnuncio,
   type AnuncioFindOne,
 } from "../interfaces/anuncio.interface";
+import redis from "../database/redis";
 
 export class AnuncioRepository implements AnuncioInterface {
   async create(data: CreateAnuncio) {
@@ -69,5 +70,17 @@ export class AnuncioRepository implements AnuncioInterface {
     });
 
     return anuncio || null;
+  }
+
+  async FindOneCache(id: string): Promise<AnuncioFindOne | null> {
+    const anuncio = (await redis.get(`anuncio:${id}`)) as AnuncioFindOne | null;
+
+    return anuncio;
+  }
+
+  async insertOneCache(id: string, data: AnuncioFindOne): Promise<null> {
+    await redis.set(`anuncio:${id}`, JSON.stringify(data), "EX", 3 * 60);
+
+    return null;
   }
 }

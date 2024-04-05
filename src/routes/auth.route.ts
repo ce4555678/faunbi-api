@@ -40,11 +40,11 @@ const authRoute = async (app: FastifyInstance) => {
         });
 
         reply.status(201);
-        return reply.send("");
+        reply.send("");
       } catch (error: any) {
         if (error.message === "User already exists") {
           reply.status(409); // Conflict
-          return reply.send({
+          reply.send({
             error: {
               message: "User already exists",
             },
@@ -53,7 +53,7 @@ const authRoute = async (app: FastifyInstance) => {
 
         if (error instanceof z.ZodError) {
           reply.status(400);
-          return reply.send({
+          reply.send({
             error: {
               message: "Bad request",
             },
@@ -88,7 +88,7 @@ const authRoute = async (app: FastifyInstance) => {
 
         const link = await googleUseCase.getLink(state);
 
-        return reply.redirect(link);
+        reply.redirect(link);
       } catch (error) {
         reply.status(500);
         return reply.send({
@@ -156,15 +156,14 @@ const authRoute = async (app: FastifyInstance) => {
               },
             });
             break;
-          default:
-            reply.status(500);
-            reply.send({
-              error: {
-                message: "Server error",
-              },
-            });
-            break;
         }
+
+        reply.status(500);
+        return reply.send({
+          error: {
+            message: "Server error",
+          },
+        });
       }
     },
   });
@@ -201,7 +200,7 @@ const authRoute = async (app: FastifyInstance) => {
       } catch (error: any) {
         if (error instanceof z.ZodError) {
           reply.status(400);
-          return reply.send({
+          reply.send({
             error: {
               message: "Bad request",
             },
@@ -235,15 +234,14 @@ const authRoute = async (app: FastifyInstance) => {
               },
             });
             break;
-          default:
-            reply.status(500);
-            reply.send({
-              error: {
-                message: "Server error",
-              },
-            });
-            break;
         }
+
+        reply.status(500);
+        return reply.send({
+          error: {
+            message: "Server error",
+          },
+        });
       }
     },
   });
